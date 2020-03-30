@@ -60,4 +60,24 @@ def high_low_record_breakers_for_2015():
     high_2015 = high['2015']
     lows_2015 = lows['2015']
 
-    return high_2005_2014, high_2015, lows_2005_2014, lows_2015
+    high_low_2015 = find_breakers(high_2005_2014, high_2015, lows_2005_2014, lows_2015)
+
+    return high_low_2015
+
+
+def find_breakers(h205214, h215, l205214, l215):
+    records = []
+
+    for date_ in h215.index:
+        high_data = h205214.loc[
+            (h205214.index.month == date_.month) &
+            (h205214.index.day == date_.day)
+        ]
+        low_data = l205214.loc[
+            (l205214.index.month == date_.month) &
+            (h205214.index.day == date_.day)
+        ]
+
+        for station_ in h215.ID[date_].unique():
+
+
