@@ -1,5 +1,4 @@
 from collections import namedtuple
-from datetime import date
 
 import pandas as pd
 
@@ -44,79 +43,47 @@ def high_low_record_breakers_for_2015():
     df = pd.read_csv(DATA_FILE)
 
     # 2
+    df.Data_Value = df.Data_Value.astype("int64")
     df.Date = pd.to_datetime(df.Date)
-    df = df.set_index(["Date"])
+    df.set_index(["Date"], inplace=True)
 
     df = df["2005":"2015"]
-
     df = df.drop([d for d in df.index if d.month == 2 and d.day == 29])
 
-    high = df[df.Element == "TMAX"]
-    lows = df[df.Element == "TMIN"]
-    del df
+    dates = df["2015"].index.unique()
 
-    high_2005_2014 = high["2005":"2014"]
-    high_2015 = high["2015"]
-    del high
-
-    lows_2005_2014 = lows["2005":"2014"]
-    lows_2015 = lows["2015"]
-    del lows
-
-    highs = list()
-    for date_ in high_2015.index.unique():
-        daily_df = high_2005_2014.loc[
-            (high_2005_2014.index.month == date_.month) & (high_2005_2014.index.day == date_.day)
+    highest = None
+    lowest = None
+    for date in dates:
+        high_ = (
+            df.loc[
+                (df.index.month == date.month)
+                & (df.index.day == date.day)
+                & (df.Element == "TMAX")
             ]
-        daily_2015_df = high_2015.loc[high_2015.index == date_.strftime('%Y-%m-%d')]
-        daily_df.reset_index('Date', inplace=True)
-        daily_2015_df.reset_index('Date', inplace=True)
-        joined_df = pd.merge(daily_df, daily_2015_df, on='ID')
-        grouped = joined_df.groupby(['ID']).max()
-        for id_ in grouped.index:
-            if grouped.Data_Value_x[id_] < grouped.Data_Value_y[id_]:
-                highs.append(
-                    STATION(
-                        id_,
-                        date_.date(),
-                        grouped.Data_Value_y[id_] / 10,
-                    )
-                )
+            .sort_values("Data_Value", ascending=False)
+            .head(1)
+        )
 
-    del high_2005_2014
-    del high_2015
-
-    lows = list()
-    for date_ in lows_2015.index.unique():
-        daily_df = lows_2005_2014.loc[
-            (lows_2005_2014.index.month == date_.month) & (lows_2005_2014.index.day == date_.day)
+        low_ = (
+            df.loc[
+                (df.index.month == date.month)
+                & (df.index.day == date.day)
+                & (df.Element == "TMIN")
             ]
-        daily_2015_df = lows_2015.loc[lows_2015.index == date_.strftime('%Y-%m-%d')]
-        daily_df.reset_index('Date', inplace=True)
-        daily_2015_df.reset_index('Date', inplace=True)
-        joined_df = pd.merge(daily_df, daily_2015_df, on='ID')
-        grouped = joined_df.groupby(['ID']).min()
-        for id_ in grouped.index:
-            if grouped.Data_Value_x[id_] > grouped.Data_Value_y[id_]:
-                lows.append(
-                    STATION(
-                        id_,
-                        date_.date(),
-                        grouped.Data_Value_y[id_] / 10,
-                    )
-                )
-    del lows_2005_2014
-    del lows_2015
+            .sort_values("Data_Value", ascending=True)
+            .head(1)
+        )
 
-    high = STATION(" ", " ", 0)
-    low = STATION(" ", " ", 100)
+        if high_.index.year == 2015:
+            if highest is None or high_["Data_Value"][0] > highest["Data_Value"][0]:
+                highest = high_
 
-    for high_ in highs:
-        if high_.Value > high.Value:
-            high = high_
+        if low_.index.year == 2015:
+            if lowest is None or low_["Data_Value"][0] < lowest["Data_Value"][0]:
+                lowest = low_
 
-    for low_ in lows:
-        if low_.Value < low.Value:
-            low = low_
+    high = STATION(highest.ID[0], highest.index[0], highest.Data_Value[0] / 10)
+    low = STATION(lowest.ID[0], lowest.index[0], lowest.Data_Value[0] / 10)
 
     return high, low
