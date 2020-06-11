@@ -50,40 +50,31 @@ def high_low_record_breakers_for_2015():
     df = df["2005":"2015"]
     df = df.drop([d for d in df.index if d.month == 2 and d.day == 29])
 
-    dates = df["2015"].index.unique()
+    df['Day'] = df.index.day
+    df['Month'] = df.index.month
 
-    highest = None
-    lowest = None
-    for date in dates:
-        high_ = (
-            df.loc[
-                (df.index.month == date.month)
-                & (df.index.day == date.day)
-                & (df.Element == "TMAX")
-            ]
-            .sort_values("Data_Value", ascending=False)
-            .head(1)
-        )
+    high = STATION('ID', 'NOW', 0.0)
+    low = STATION('ID', 'NOW', 500.0)
+    grouped = df.groupby(by=['Day', 'Month'])
+    for group in grouped:
+        highs = group[1][
+            group[1].Element == "TMAX"
+        ].sort_values('Data_Value', ascending=False).head(1)
 
-        low_ = (
-            df.loc[
-                (df.index.month == date.month)
-                & (df.index.day == date.day)
-                & (df.Element == "TMIN")
-            ]
-            .sort_values("Data_Value", ascending=True)
-            .head(1)
-        )
+        lows = group[1][
+            group[1].Element == "TMIN"
+        ].sort_values('Data_Value', ascending=True).head(1)
 
-        if high_.index.year == 2015:
-            if highest is None or high_["Data_Value"][0] > highest["Data_Value"][0]:
-                highest = high_
+        if (
+            highs.index.year[0] == 2015 and
+            (highs.Data_Value[highs.index[0]] / 10) > high.Value
+        ):
+            high = STATION(highs.ID[highs.index[0]], highs.index[0], highs.Data_Value[highs.index[0]] / 10)
 
-        if low_.index.year == 2015:
-            if lowest is None or low_["Data_Value"][0] < lowest["Data_Value"][0]:
-                lowest = low_
-
-    high = STATION(highest.ID[0], highest.index[0], highest.Data_Value[0] / 10)
-    low = STATION(lowest.ID[0], lowest.index[0], lowest.Data_Value[0] / 10)
+        if (
+            lows.index.year[0] == 2015 and
+            (lows.Data_Value[lows.index[0]] / 10) < low.Value
+        ):
+            low = STATION(lows.ID[lows.index[0]], lows.index[0], lows.Data_Value[lows.index[0]] / 10)
 
     return high, low
