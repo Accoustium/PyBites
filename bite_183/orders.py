@@ -15,23 +15,27 @@ if not os.path.isfile(EXCEL):
 def load_excel_into_dataframe(excel=EXCEL):
     """Load the SalesOrders sheet of the excel book (EXCEL variable)
        into a Pandas DataFrame and return it to the caller"""
-    pass
+    df = pd.read_excel(excel, sheet_name=1)
+    return df
 
 
 def get_year_region_breakdown(df):
     """Group the DataFrame by year and region, summing the Total
        column. You probably need to make an extra column for
        year, return the new df as shown in the Bite description"""
-    pass
+    df['Year'] = pd.DatetimeIndex(df.OrderDate).year
+    return df.groupby(['Year', 'Region'])['Total'].sum()
 
 
 def get_best_sales_rep(df):
     """Return a tuple of the name of the sales rep and
        the total of his/her sales"""
-    pass
+    best_rep = df.groupby(['Rep'])['Total'].sum().sort_values(ascending=False).head(1)
+    return best_rep.index[0], best_rep.values[0]
 
 
 def get_most_sold_item(df):
     """Return a tuple of the name of the most sold item
        and the number of units sold"""
-    pass
+    most_sold = df.groupby(['Item'])['Units'].sum().sort_values(ascending=False).head(1)
+    return most_sold.index[0], most_sold.values[0]
